@@ -1,0 +1,30 @@
+name: Unzip project
+on:
+  push:
+    paths: ['*.zip']
+permissions:
+  contents: write
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip and commit
+        run: |
+          Z=$(ls *.zip 2>/dev/null | head -n1)
+          [ -z "$Z" ] && exit 0
+          mkdir /tmp/x
+          unzip -q "$Z" -d /tmp/x
+          cd /tmp/x
+          if [ "$(ls -A | wc -l)" = "1" ] && [ -d "$(ls -A | head -n1)" ]; then
+            cd "$(ls -A | head -n1)"
+          fi
+          rm -rf .github/workflows
+          cp -a . "$GITHUB_WORKSPACE/"
+          cd "$GITHUB_WORKSPACE"
+          rm -f "$Z"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Add MusicBox project" || exit 0
+          git push
